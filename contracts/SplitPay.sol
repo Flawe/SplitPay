@@ -9,12 +9,8 @@ contract SplitPay is Ownable {
   event Deposit(address indexed receiver, uint256 amount, uint256 receiverPerc);
   event DepositReferral(address indexed receiver, address indexed referral, uint256 amount, uint256 receiverPerc, uint256 referralPerc);
   event Withdraw(address indexed receiver, uint256 amount);
-  event ReceiveDeposit(address indexed sender, uint256 amount);
-  event FallbackDeposit(address indexed sender, uint256 amount);
-  event OwnerWithdraw(address indexed sender, uint256 amount);
 
   mapping(address => uint256) private deposited;
-  uint256 private fallbackFunds;
 
   function depositsOf(address addr) external view returns (uint256) {
     return deposited[addr];
@@ -57,30 +53,5 @@ contract SplitPay is Ownable {
     (bool success, ) = sender.call{value: amount}("");
     require(success, "Transfer failed, recipient may have reverted.");
     emit Withdraw(sender, amount);
-  }
-
-  function fallbackBalance() external view returns (uint256) {
-    return fallbackFunds;
-  }
-
-  function ownerWithdraw() external onlyOwner {
-    require(fallbackFunds <= address(this).balance, "Balance lower than fallback funds!");
-    uint256 amount = fallbackFunds;
-    fallbackFunds = 0;
-    (bool success, ) = msg.sender.call{value: amount}("");
-    require(success, "Transfer failed, recipient may have reverted.");
-    emit OwnerWithdraw(msg.sender, amount);
-  }
-
-  receive() external payable {
-    uint256 amount = msg.value;
-    fallbackFunds += amount;
-    emit ReceiveDeposit(msg.sender, amount);
-  }
-
-  fallback() external payable {
-    uint256 amount = msg.value;
-    fallbackFunds += amount;
-    emit FallbackDeposit(msg.sender, amount);
   }
 }

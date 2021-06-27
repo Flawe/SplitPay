@@ -59,14 +59,6 @@ describe('SplitPay', function() {
       .to.equal(2);
   });
 
-  it('Can not change fallback funds with deposit to receiver', async function() {
-    const wallet0 = this.accounts[1];
-    const override = { value: 100 };
-    await this.splitPay.deposit(wallet0.address, 98, override);
-    await expect(await this.splitPay.fallbackBalance())
-      .to.equal(0);
-  });
-
   it('Can not deposit 0 eth with referral', async function() {
     const wallet0 = this.accounts[1];
     const wallet1 = this.accounts[2];
@@ -143,75 +135,6 @@ describe('SplitPay', function() {
       .to.equal(1);
   });
 
-  it('Can not change fallback funds with deposit with referral', async function() {
-    const wallet0 = this.accounts[1];
-    const wallet1 = this.accounts[2];
-    const override = { value: 100 };
-    await this.splitPay.depositReferral(wallet0.address, 98, wallet1.address, 1, override);
-    await expect(await this.splitPay.fallbackBalance())
-      .to.equal(0);
-  });
-
-  it('Can change contract balance on transfer', async function() {
-    const wallet0 = this.accounts[1];
-    await expect(await wallet0.sendTransaction({to: this.splitPay.address, value: 100}))
-      .to.changeEtherBalance(this.splitPay, 100);
-  });
-
-  it('Can emit receive deposit event', async function() {
-    const wallet0 = this.accounts[1];
-    await expect(await wallet0.sendTransaction({to: this.splitPay.address, value: 100}))
-      .to.emit(this.splitPay, "ReceiveDeposit")
-      .withArgs(wallet0.address, 100);
-  });
-
-  it('Can read fallback balance', async function() {
-    const wallet0 = this.accounts[1];
-    await wallet0.sendTransaction({to: this.splitPay.address, value: 100});
-    await expect(await this.splitPay.fallbackBalance())
-      .to.equal(100);
-  });
-
-  it('Can not withdraw fallback funds as non-owner', async function() {
-    const wallet0 = this.accounts[1];
-    await expect(this.splitPay.connect(wallet0).ownerWithdraw())
-      .to.be.revertedWith("Ownable: caller is not the owner");
-  });
-
-  it('Can emit event on fallback withdraw', async function() {
-    const owner = this.accounts[0];
-    const wallet0 = this.accounts[1];
-    await wallet0.sendTransaction({to: this.splitPay.address, value: 100});
-    await expect(this.splitPay.ownerWithdraw())
-      .to.emit(this.splitPay, "OwnerWithdraw")
-      .withArgs(owner.address, 100);
-  });
-
-  it('Can receive withdrawn fallback funds', async function() {
-    const owner = this.accounts[0];
-    const wallet0 = this.accounts[1];
-    await wallet0.sendTransaction({to: this.splitPay.address, value: 100});
-    await expect(await this.splitPay.ownerWithdraw())
-      .to.changeEtherBalance(owner, 100);
-  });
-
-  it('Can decrement balance when withdrawing fallback funds', async function() {
-    const owner = this.accounts[0];
-    const wallet0 = this.accounts[1];
-    await wallet0.sendTransaction({to: this.splitPay.address, value: 100});
-    await expect(await this.splitPay.ownerWithdraw())
-      .to.changeEtherBalance(this.splitPay, -100);
-  });
-
-  it('Can reset fallback funds when withdrawn', async function() {
-    const owner = this.accounts[0];
-    const wallet0 = this.accounts[1];
-    await wallet0.sendTransaction({to: this.splitPay.address, value: 100});
-    await this.splitPay.ownerWithdraw();
-    await expect(await this.splitPay.fallbackBalance())
-      .to.equal(0);
-  });
- 
   it('Can withdraw receiver funds after deposit', async function() {
     const wallet0 = this.accounts[1];
     const override = { value: 100 };
