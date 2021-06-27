@@ -3,10 +3,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract SplitPay is Ownable {
-  using SafeMath for uint256;
 
   event Deposit(address indexed receiver, uint256 amount, uint256 receiverPerc);
   event DepositReferral(address indexed receiver, address indexed referral, uint256 amount, uint256 receiverPerc, uint256 referralPerc);
@@ -28,10 +26,10 @@ contract SplitPay is Ownable {
     uint256 amount = msg.value;
     require(amount != 0, "Can not deposit 0 wei");
 
-    uint256 receiverAmount = amount.mul(receiverPerc).div(100);
-    deposited[receiver] = deposited[receiver].add(receiverAmount);
+    uint256 receiverAmount = amount * receiverPerc / 100;
+    deposited[receiver] += receiverAmount;
     address owner = owner();
-    deposited[owner] = deposited[owner].add(amount.sub(receiverAmount));
+    deposited[owner] += amount - receiverAmount;
     emit Deposit(receiver, amount, receiverPerc);
   }
 
@@ -40,14 +38,14 @@ contract SplitPay is Ownable {
     require(referral != address(0));
     uint256 amount = msg.value;
     require(amount != 0, "Can not split deposit 0 wei");
-    require(receiverPerc.add(referralPerc) <= 100, "Percentages add up to more than 100");
+    require(receiverPerc + referralPerc <= 100, "Percentages add up to more than 100");
 
-    uint256 receiverAmount = amount.mul(receiverPerc).div(100);
-    uint256 referralAmount = amount.mul(referralPerc).div(100);
-    deposited[receiver] = deposited[receiver].add(receiverAmount);
-    deposited[referral] = deposited[referral].add(referralAmount);
+    uint256 receiverAmount = amount * receiverPerc / 100;
+    uint256 referralAmount = amount * referralPerc / 100;
+    deposited[receiver] += receiverAmount;
+    deposited[referral] += referralAmount;
     address owner = owner();
-    deposited[owner] = deposited[owner].add(amount.sub(receiverAmount).sub(referralAmount));
+    deposited[owner] += amount - receiverAmount - referralAmount;
     emit DepositReferral(receiver, referral, amount, receiverPerc, referralPerc);
   }
 
@@ -76,13 +74,13 @@ contract SplitPay is Ownable {
 
   receive() external payable {
     uint256 amount = msg.value;
-    fallbackFunds = fallbackFunds.add(amount);
+    fallbackFunds += amount;
     emit ReceiveDeposit(msg.sender, amount);
   }
 
   fallback() external payable {
     uint256 amount = msg.value;
-    fallbackFunds = fallbackFunds.add(amount);
+    fallbackFunds += amount;
     emit FallbackDeposit(msg.sender, amount);
   }
 }
